@@ -19,6 +19,11 @@
 #include <tee_api_compat.h>
 #include <util.h>
 
+#ifndef TEE_STORAGE_PRIVATE_SPI_NOR
+/* OP-TEE extension, may be missing from older TA dev kit headers */
+#define TEE_STORAGE_PRIVATE_SPI_NOR 0x80000300
+#endif
+
 #define DEFINE_TEST_MULTIPLE_STORAGE_IDS(test_name)		 \
 static void test_name(ADBG_Case_t *c)				 \
 {								 \
@@ -488,6 +493,7 @@ static struct storage_info storage_info[] = {
 	{ .id = TEE_STORAGE_PRIVATE },
 	{ .id = TEE_STORAGE_PRIVATE_REE },
 	{ .id = TEE_STORAGE_PRIVATE_RPMB },
+	{ .id = TEE_STORAGE_PRIVATE_SPI_NOR },
 };
 
 static TEEC_Result check_storage_available(uint32_t id, bool *avail)
@@ -1927,8 +1933,9 @@ static void xtest_tee_test_6018_single(ADBG_Case_t *c, uint32_t storage_id)
 	size_t block_size = 0;
 	size_t n = 0;
 
-	if (storage_is(storage_id, TEE_STORAGE_PRIVATE_RPMB)) {
-		/* RPMB FS is a bit resource constrained */
+	if (storage_is(storage_id, TEE_STORAGE_PRIVATE_RPMB) ||
+	    storage_is(storage_id, TEE_STORAGE_PRIVATE_SPI_NOR)) {
+		/* RPMB FS and SPI-NOR FS are a bit resource constrained */
 		num_blocks = 10;
 		block_size = 1024;
 	} else {

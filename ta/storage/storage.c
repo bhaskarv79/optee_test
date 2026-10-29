@@ -12,6 +12,11 @@
 #include <trace.h>
 #include <user_ta_header_defines.h>
 
+#ifndef TEE_STORAGE_PRIVATE_SPI_NOR
+/* OP-TEE extension, may be missing from older TA dev kit headers */
+#define TEE_STORAGE_PRIVATE_SPI_NOR 0x80000300
+#endif
+
 #define ASSERT_PARAM_TYPE(pt) \
 do { \
 	if ((pt) != param_types) \
@@ -755,7 +760,8 @@ out:
 TEE_Result ta_storage_cmd_clear_storage(uint32_t param_types,
 					TEE_Param params[4])
 {
-	uint32_t id[] = { TEE_STORAGE_PRIVATE_REE, TEE_STORAGE_PRIVATE_RPMB };
+	uint32_t id[] = { TEE_STORAGE_PRIVATE_REE, TEE_STORAGE_PRIVATE_RPMB,
+			  TEE_STORAGE_PRIVATE_SPI_NOR };
 	TEE_Result res = TEE_ERROR_GENERIC;
 	size_t i = 0;
 
