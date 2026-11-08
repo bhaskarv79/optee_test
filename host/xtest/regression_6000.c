@@ -573,12 +573,64 @@ static bool is_storage_available(uint32_t id)
 #define TEE_STORAGE_ILLEGAL_VALUE 0x7FFFFFFF
 #endif
 
+/*
+ * Find the storage behind TEE_STORAGE_PRIVATE: create an object through
+ * it and look for the object with each explicit storage ID.
+ */
+static uint32_t probe_tee_storage_private(void)
+{
+	static const uint32_t ids[] = {
+		TEE_STORAGE_PRIVATE_SPI_NOR,
+		TEE_STORAGE_PRIVATE_REE,
+		TEE_STORAGE_PRIVATE_RPMB,
+	};
+	uint32_t found = TEE_STORAGE_ILLEGAL_VALUE;
+	char name[] = "xtest_private_probe";
+	TEEC_Session sess = { };
+	uint32_t orig = 0;
+	uint32_t obj = 0;
+	size_t i = 0;
+
+	if (xtest_teec_open_session(&sess, &storage_ta_uuid, NULL, &orig))
+		return found;
+
+	if (fs_create(&sess, name, sizeof(name), TEE_DATA_FLAG_ACCESS_READ |
+		      TEE_DATA_FLAG_ACCESS_WRITE_META, 0, NULL, 0, &obj,
+		      TEE_STORAGE_PRIVATE))
+		goto out;
+	fs_close(&sess, obj);
+
+	for (i = 0; i < ARRAY_SIZE(ids); i++) {
+		if (!is_storage_available(ids[i]))
+			continue;
+		if (!fs_open(&sess, name, sizeof(name),
+			     TEE_DATA_FLAG_ACCESS_READ, &obj, ids[i])) {
+			fs_close(&sess, obj);
+			found = ids[i];
+			break;
+		}
+	}
+
+	if (!fs_open(&sess, name, sizeof(name),
+		     TEE_DATA_FLAG_ACCESS_WRITE_META, &obj,
+		     TEE_STORAGE_PRIVATE))
+		fs_unlink(&sess, obj);
+out:
+	TEEC_CloseSession(&sess);
+
+	return found;
+}
+
 static uint32_t fs_id_for_tee_storage_private(void)
 {
-	/*
-	 * Assumes that REE FS is preferred over RPMB FS at compile time in
-	 * optee_os
-	 */
+	static uint32_t id;
+
+	if (!id)
+		id = probe_tee_storage_private();
+	if (id != TEE_STORAGE_ILLEGAL_VALUE)
+		return id;
+
+	/* REE FS is preferred over RPMB FS by default in optee_os */
 	if (is_storage_available(TEE_STORAGE_PRIVATE_REE))
 		return TEE_STORAGE_PRIVATE_REE;
 	if (is_storage_available(TEE_STORAGE_PRIVATE_RPMB))
