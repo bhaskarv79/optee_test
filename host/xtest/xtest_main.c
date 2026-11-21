@@ -25,6 +25,7 @@
 
 /* include here shandalone tests */
 #include "clear_storage.h"
+#include "storage_obj.h"
 #include "crypto_common.h"
 #include "install_ta.h"
 #include "pkcs11_1000.h"
@@ -127,6 +128,8 @@ void usage(char *program)
 	printf("\t--stats [opts]     Various statistics ('-h' for usage)\n");
 	printf("\t--clear-storage    Delete any persistent objects that may have been\n");
 	printf("\t                   left over by a previous run of this application\n");
+	printf("\t--storage-obj <ree|rpmb> <write|read|delete> <name> [...]\n");
+	printf("\t                   Write, check or delete one storage TA object\n");
 	printf("\n");
 	printf("Examples:\n");
 	printf("\txtest -t regression 4001 4003\n");
@@ -198,6 +201,8 @@ int main(int argc, char *argv[])
 		return stats_runner_cmd_parser(argc - 1, &argv[1]);
 	else if (argc == 2 && !strcmp(argv[1], "--clear-storage"))
 		return clear_storage();
+	else if (argc > 1 && !strcmp(argv[1], "--storage-obj"))
+		return storage_obj_runner_cmd_parser(argc - 1, &argv[1]);
 
 	while ((opt = getopt(argc, argv, "d:l:t:h")) != -1) {
 		switch (opt) {

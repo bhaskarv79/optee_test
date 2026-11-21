@@ -49,6 +49,7 @@ set (SRC
 	benchmark_1000.c
 	benchmark_2000.c
 	clear_storage.c
+	storage_obj.c
 	regression_1000.c
 	regression_4000.c
 	regression_4100.c
